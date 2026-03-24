@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>P&amp;L daily · income & expense manager</title>
+  <!-- Font & Icons (optional) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <!-- jsPDF library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <!-- modern clean look -->
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    body {
+      background: #f4f7fb;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+
+    .app-wrapper {
+      max-width: 1100px;
+      width: 100%;
+    }
+
+    /* main card */
+    .glass-card {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(2px);
+      border-radius: 2rem;
+      box-shadow: 0 20px 40px -10px rgba(0, 20, 30, 0.2), 0 8px 20px rgba(0,0,0,0.05);
+      padding: 2.2rem 2rem;
+      border: 1px solid rgba(255,255,255,0.5);
+    }
+
+    h1 {
+      font-size: 1.9rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: #1a2639;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 0.2rem;
+    }
+
+    h1 i {
+      color: #2d6a4f;
+      font-size: 2rem;
+    }
+
+    .subhead {
+      color: #5a6b7a;
+      font-weight: 400;
+      margin-bottom: 2rem;
+      border-left: 4px solid #38bdf8;
+      padding-left: 1rem;
+      background: #eaf3fa30;
+      border-radius: 0 8px 8px 0;
+    }
+
+    /* form layout */
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.2rem 1.5rem;
+      margin-bottom: 2rem;
+      align-items: end;
+    }
+
+    .input-field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .input-field label {
+      font-weight: 600;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      color: #2c3e50;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .input-field label i {
+      width: 1.2rem;
+      color: #0d9488;
+    }
+
+    .input-field input {
+      background: white;
+      border: 1px solid #dde3ea;
+      border-radius: 1.2rem;
+      padding: 0.8rem 1.2rem;
+      font-size: 1rem;
+      transition: all 0.2s;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+    }
+
+    .input-field input:focus {
+      outline: none;
+      border-color: #2d6a4f;
+      box-shadow: 0 4px 12px rgba(45, 106, 79, 0.15);
+    }
+
+    .btn-submit {
+      background: #0f172a;
+      color: white;
+      border: none;
+      border-radius: 2rem;
+      padding: 0.9rem 2rem;
+      font-weight: 600;
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.2);
+      margin-top: 1.2rem;
+      width: 100%;
+    }
+
+    .btn-submit:hover {
+      background: #1e293b;
+    }
+
+    .btn-submit:active {
+      transform: scale(0.98);
+    }
+
+    /* report card */
+    .report-card {
+      background: white;
+      border-radius: 1.8rem;
+      padding: 2rem 2rem 1.8rem;
+      box-shadow: 0 15px 30px -12px rgba(0,0,0,0.15);
+      margin: 2rem 0 1.8rem;
+      border: 1px solid #ffffff70;
+    }
+
+    .report-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 2px dashed #cbd5e1;
+      padding-bottom: 0.9rem;
+      margin-bottom: 1.6rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .report-header h2 {
+      font-size: 1.6rem;
+      font-weight: 550;
+      color: #1e293b;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .report-header h2 i {
+      color: #3b82f6;
+    }
+
+    .profit-badge, .loss-badge {
+      font-weight: 700;
+      padding: 0.4rem 1.2rem;
+      border-radius: 40px;
+      background: #f1f5f9;
+      font-size: 1.2rem;
+    }
+
+    .profit-text {
+      color: #0f7b4b;
+      background: #e0f2e9;
+      font-weight: 700;
+      padding: 0.1rem 0.8rem;
+      border-radius: 30px;
+    }
+
+    .loss-text {
+      color: #b91c1c;
+      background: #fee2e2;
+      font-weight: 700;
+      padding: 0.1rem 0.8rem;
+      border-radius: 30px;
+    }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1.5rem 2rem;
+      margin-bottom: 1rem;
+    }
+
+    .detail-item {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .detail-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: #64748b;
+      letter-spacing: 0.3px;
+    }
+
+    .detail-value {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #0b1e33;
+      line-height: 1.3;
+      word-break: break-word;
+    }
+
+    .detail-value.smaller {
+      font-size: 1.2rem;
+      font-weight: 500;
+    }
+
+    .pnl-row {
+      background: #f8fafc;
+      border-radius: 1.5rem;
+      padding: 1.2rem 1.8rem;
+      margin-top: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+      border: 1px solid #e9eef3;
+    }
+
+    .pnl-label {
+      font-size: 1.2rem;
+      font-weight: 550;
+      color: #334155;
+    }
+
+    .pnl-figure {
+      font-size: 2rem;
+      font-weight: 700;
+    }
+
+    /* pdf button */
+    .pdf-btn {
+      background: white;
+      color: #1e293b;
+      border: 2px solid #cbd5e1;
+      border-radius: 3rem;
+      padding: 0.9rem 2.2rem;
+      font-weight: 600;
+      font-size: 1.1rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.7rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 6px 14px rgba(0,0,0,0.02);
+      width: auto;
+    }
+
+    .pdf-btn:hover {
+      background: #f0f9ff;
+      border-color: #3b82f6;
+      color: #0c4a6e;
+    }
+
+    .action-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    /* initial empty message */
+    .placeholder-message {
+      text-align: center;
+      padding: 2.5rem 1rem;
+      color: #6d7b8c;
+      font-size: 1.2rem;
+      background: #f1f6fc;
+      border-radius: 2rem;
+    }
+
+    /* responsive fine-tuning */
+    @media (max-width: 600px) {
+      .glass-card { padding: 1.5rem; }
+      .report-card { padding: 1.5rem; }
+      .detail-value { font-size: 1.3rem; }
+      .pnl-figure { font-size: 1.7rem; }
+      .btn-submit { padding: 0.8rem 1rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="app-wrapper">
+  <div class="glass-card">
+    <h1>
+      <i class="fas fa-chart-line"></i> daily P&L · ledger
+    </h1>
+    <div class="subhead">
+      <i class="fas fa-pencil-alt" style="margin-right: 8px;"></i> enter details → profit/loss calculated instantly
+    </div>
+
+    <!-- form section -->
+    <div class="form-grid">
+      <div class="input-field">
+        <label><i class="fas fa-store"></i> Name / Business</label>
+        <input type="text" id="businessName" placeholder="e.g. Central Cafe" autocomplete="off">
+      </div>
+      <div class="input-field">
+        <label><i class="fas fa-calendar-alt"></i> Date</label>
+        <input type="date" id="transactionDate">
+      </div>
+      <div class="input-field">
+        <label><i class="fas fa-dollar-sign"></i> Total Income</label>
+        <input type="number" id="incomeAmount" placeholder="0.00" step="0.01" min="0">
+      </div>
+      <div class="input-field">
+        <label><i class="fas fa-receipt"></i> Total Expense</label>
+        <input type="number" id="expenseAmount" placeholder="0.00" step="0.01" min="0">
+      </div>
+    </div>
+
+    <button class="btn-submit" id="submitBtn">
+      <i class="fas fa-calculator"></i> submit & update report
+    </button>
+
+    <!-- dynamic report panel -->
+    <div id="reportContainer" style="margin-top: 1.8rem;">
+      <!-- initially empty / placeholder (will be replaced after first submit) -->
+      <div class="report-card" id="reportCard">
+        <div class="placeholder-message">
+          <i class="fas fa-cloud-upload-alt" style="font-size: 2.2rem; opacity: 0.6; margin-bottom: 0.5rem; display: block;"></i>
+          No entries yet. Fill the form and click submit.
+        </div>
+      </div>
+    </div>
+
+    <!-- pdf download action + hint -->
+    <div class="action-bar">
+      <button class="pdf-btn" id="downloadPdfBtn">
+        <i class="fas fa-file-pdf"></i> Download Report as PDF
+      </button>
+      <span style="color: #5b6f82; font-size: 0.95rem;">
+        <i class="fas fa-check-circle" style="color: #2d6a4f;"></i> profit <span style="color:#0f7b4b;">green</span> · loss <span style="color:#b91c1c;">red</span>
+      </span>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function() {
+    // ----- DOM elements -----
+    const businessInput = document.getElementById('businessName');
+    const dateInput = document.getElementById('transactionDate');
+    const incomeInput = document.getElementById('incomeAmount');
+    const expenseInput = document.getElementById('expenseAmount');
+    const submitBtn = document.getElementById('submitBtn');
+    const reportContainer = document.getElementById('reportContainer');
+    const downloadBtn = document.getElementById('downloadPdfBtn');
+
+    // today's date as default for date picker (YYYY-MM-DD)
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    const todayFormatted = `${yyyy}-${mm}-${dd}`;
+    dateInput.value = todayFormatted;
+
+    // default demo placeholder values (optional: can be empty)
+    businessInput.value = 'The Coffee House';
+    incomeInput.value = 2450.00;
+    expenseInput.value = 1890.00;
+
+    // Internal state: last valid report data
+    let currentReport = {
+      business: 'The Coffee House',
+      date: todayFormatted,
+      income: 2450.00,
+      expense: 1890.00,
+      profitLoss: 560.00,
+      isProfit: true
+    };
+
+    // ----- helper: format currency USD (simple) -----
+    const formatMoney = (val) => {
+      return Number(val).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    };
+
+    // ----- update report UI based on currentReport (also called after submit) -----
+    function renderReport() {
+      const data = currentReport;
+      const profitLossValue = data.profitLoss;
+      const isProfit = profitLossValue >= 0;
+      const sign = isProfit ? '' : '−'; // we'll use absolute value for display
+      const absValue = Math.abs(profitLossValue);
+      const formattedPL = (isProfit ? '' : '-') + formatMoney(absValue);
+
+      // build html string
+      const html = `
+        <div class="report-card" id="reportCard">
+          <div class="report-header">
+            <h2><i class="fas fa-file-invoice"></i> daily financial report</h2>
+            <span class="${isProfit ? 'profit-text' : 'loss-text'}" style="font-size: 1.3rem;">
+              ${isProfit ? '📈 PROFIT' : '📉 LOSS'}
+            </span>
+          </div>
+
+          <div class="detail-grid">
+            <div class="detail-item">
+              <span class="detail-label"><i class="fas fa-store" style="margin-right: 4px;"></i> entity</span>
+              <span class="detail-value">${data.business || '—'}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label"><i class="fas fa-calendar"></i> date</span>
+              <span class="detail-value">${data.date || '—'}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label"><i class="fas fa-arrow-up"></i> income</span>
+              <span class="detail-value">$${formatMoney(data.income)}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label"><i class="fas fa-arrow-down"></i> expense</span>
+              <span class="detail-value">$${formatMoney(data.expense)}</span>
+            </div>
+          </div>
+
+          <div class="pnl-row">
+            <span class="pnl-label"><i class="fas fa-balance-scale"></i> profit / loss</span>
+            <span class="pnl-figure ${isProfit ? 'profit-text' : 'loss-text'}" style="background: transparent; padding: 0; font-size: 2rem;">
+              ${formattedPL}
+            </span>
+          </div>
+        </div>
+      `;
+      reportContainer.innerHTML = html;
+    }
+
+    // ----- compute profit/loss from inputs, update state & re-render -----
+    function handleSubmit() {
+      // read & parse
+      const business = businessInput.value.trim() || 'Unnamed business';
+      const date = dateInput.value || todayFormatted;
+      const income = parseFloat(incomeInput.value) || 0;
+      const expense = parseFloat(expenseInput.value) || 0;
+      const pl = income - expense;
+
+      // refresh currentReport
+      currentReport = {
+        business: business,
+        date: date,
+        income: income,
+        expense: expense,
+        profitLoss: pl,
+        isProfit: pl >= 0
+      };
+
+      renderReport();
+    }
+
+    // initial render (with placeholder values)
+    renderReport();
+
+    // attach submit button
+    submitBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      handleSubmit();
+    });
+
+    // optional: press Enter in any field triggers submit (good ux)
+    const inputs = [businessInput, dateInput, incomeInput, expenseInput];
+    inputs.forEach(inp => inp.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleSubmit();
+      }
+    }));
+
+    // ----- PDF generation (simple but professional) -----
+    function generatePDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      // colors and styling
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const margin = 18;
+
+      // header background
+      doc.setFillColor(15, 23, 42); // dark
+      doc.rect(0, 0, pageWidth, 38, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(18);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Daily Financial Report', margin, 24);
+
+      // reset text color for rest
+      doc.setTextColor(20, 20, 30);
+      doc.setFontSize(11);
+     
+
+      // draw a card-like rectangle with light shadow impression
+      doc.setFillColor(250, 250, 252);
+      doc.setDrawColor(200, 208, 220);
+      doc.roundedRect(margin, 48, pageWidth - 2 * margin, 68, 3, 3, 'FD'); 
+
+      // entity & date line (bold)
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Entity: ${currentReport.business}`, margin + 4, 62);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Date: ${currentReport.date}`, margin + 4, 75);
+
+      // income / expense row
+      doc.setFontSize(11);
+      doc.text(`Income: $${formatMoney(currentReport.income)}`, margin + 4, 92);
+      doc.text(`Expense: $${formatMoney(currentReport.expense)}`, margin + 4, 105);
+
+      // profit / loss line (highlight)
+      const plValue = currentReport.profitLoss;
+      const isProfit = plValue >= 0;
+      const signStr = isProfit ? '' : '-';
+      const plFormatted = signStr + formatMoney(Math.abs(plValue));
+      const plText = `Profit / Loss: ${plFormatted}`;
+
+      // set background color for p&l
+      if (isProfit) {
+        doc.setFillColor(224, 242, 233); // light green
+        doc.setTextColor(15, 123, 75);
+      } else {
+        doc.setFillColor(254, 226, 226); // light red
+        doc.setTextColor(185, 28, 28);
+      }
+      doc.roundedRect(margin + 2, 116, pageWidth - 2 * margin - 4, 16, 2, 2, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.text(plText, margin + 6, 128);
+      
+      // reset text color
+      doc.setTextColor(0, 0, 0);
+      
+      // footer line / generated timestamp
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'italic');
+      doc.setTextColor(100, 110, 130);
+      const now = new Date();
+      const dateStr = now.toLocaleDateString() + ' ' + now.toLocaleTimeString();
+      doc.text(`Generated on ${dateStr} · daily P&L app`, margin, 280);
+      
+      // add subtle border
+      doc.setDrawColor(210, 220, 230);
+      doc.rect(margin, 48, pageWidth - 2 * margin, 98, 'S');
+
+      // save pdf
+      doc.save(`daily_report_${currentReport.date}.pdf`);
+    }
+
+    // attach pdf download
+    downloadBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      // ensure currentReport is synced with form (call handleSubmit soft)
+      handleSubmit(); // updates state from latest inputs
+      generatePDF();
+    });
+
+    // make sure placeholder disappears once we have data (already rendered)
+  })();
+</script>
+<!-- small note: ensure that initial render shows 'The Coffee House' default -->
+</body>
+</html>
